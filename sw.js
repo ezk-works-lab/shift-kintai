@@ -1,5 +1,5 @@
 /* 勤怠打刻 サービスワーカー：オフラインでも画面を開けるようにする */
-const CACHE = 'kintai-v1.3.0';
+const CACHE = 'kintai-v1.3.1';
 const ASSETS = ['./', './index.html', './encoding.min.js', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
