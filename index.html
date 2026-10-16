@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#071a3d">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="勤怠打刻">
+<title>勤怠打刻</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="encoding.min.js"></script>
+<style>
+:root{
+  --bg:#071a3d; --bg2:#0b2350; --panel:#0f2c63; --panel2:#133676; --line:#24529c;
+  --text:#e8f1ff; --muted:#8fa8d6; --cyan:#53dcff; --cyan-d:#1fa8d6;
+  --amber:#ffb84d; --red:#ff6d7f; --ok:#6af0bf;
+  --font:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic","Meiryo",system-ui,sans-serif;
+  --num:"Saira Condensed","Arial Narrow","Roboto Condensed",var(--font);
+  --r-lg:22px; --r-md:14px; --r-sm:10px;
+  --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{
+  font-family:var(--font);color:var(--text);background:var(--bg);
+  background-image:
+    linear-gradient(rgba(83,220,255,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(83,220,255,.045) 1px,transparent 1px),
+    radial-gradient(120% 60% at 50% 0%,#123a80 0%,var(--bg) 65%);
+  background-size:24px 24px,24px 24px,100% 100%;
+  background-attachment:fixed;
+  font-size:16px;line-height:1.6;
+  -webkit-text-size-adjust:100%;
+}
+body.noscroll{overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+
+.app{max-width:560px;margin:0 auto;min-height:100%;
+  padding:calc(var(--sat) + 8px) 16px calc(var(--sab) + 96px)}
+.top{display:flex;align-items:center;justify-content:space-between;padding:8px 2px 4px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.06em}
+.brand svg{width:26px;height:26px}
+.who{font-size:.85rem;color:var(--muted);text-align:right;line-height:1.3}
+
+.view{display:none}
+.view.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.view.active{animation:none}*{transition:none!important}}
+
+h1.vt{font-size:1.25rem;margin:14px 2px 12px;font-weight:700}
+h2.st{font-size:1rem;margin:22px 2px 10px;color:var(--cyan);font-weight:700}
+
+/* ---------- home ---------- */
+.alert{background:rgba(255,184,77,.12);border:1px solid rgba(255,184,77,.5);color:#ffd9a0;
+  border-radius:var(--r-md);padding:12px 14px;margin:8px 0;font-size:.9rem}
+.alert button{margin-top:8px}
+.gauge-wrap{position:relative;width:min(78vw,300px);aspect-ratio:1;margin:6px auto 0}
+.gauge{width:100%;height:100%;display:block}
+.gauge .tick{stroke:#2c5aa6;stroke-width:2}
+.gauge .tick.major{stroke:#5d86c9;stroke-width:3}
+.gauge .track{fill:none;stroke:rgba(83,220,255,.12);stroke-width:10}
+.gauge .prog{fill:none;stroke:var(--cyan);stroke-width:10;stroke-linecap:round;
+  transition:stroke-dashoffset .6s ease;filter:drop-shadow(0 0 6px rgba(83,220,255,.7))}
+.gauge .prog.brk{stroke:var(--amber);filter:drop-shadow(0 0 6px rgba(255,184,77,.6))}
+.gauge .sec{fill:var(--cyan)}
+.readout{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.readout .date{font-size:.9rem;color:var(--muted)}
+.readout .time{font-family:var(--num);font-weight:600;font-size:clamp(3.6rem,17vw,4.8rem);line-height:1;
+  font-variant-numeric:tabular-nums;text-shadow:0 0 18px rgba(83,220,255,.45)}
+.readout .time .s{font-size:.42em;color:var(--muted);margin-left:4px}
+.status{margin-top:10px;font-size:.85rem;font-weight:700;padding:4px 14px;border-radius:999px;
+  border:1px solid var(--line);color:var(--muted)}
+.status.on{color:#022235;background:var(--cyan);border-color:var(--cyan)}
+.status.brk{color:#2b1800;background:var(--amber);border-color:var(--amber)}
+.status.done{color:var(--ok);border-color:rgba(106,240,191,.6)}
+.shiftline{text-align:center;color:var(--muted);font-size:.9rem;margin:6px 0 14px;min-height:1.5em}
+.shiftline b{color:var(--text);font-weight:700}
+
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:var(--r-md);padding:12px 16px;
+  font-weight:700;transition:transform .08s ease,background .2s,opacity .2s;touch-action:manipulation}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.32;cursor:not-allowed;transform:none}
+.btn.primary{background:var(--cyan);border-color:var(--cyan);color:#032234}
+.btn.ghost{background:transparent}
+.btn.danger{background:transparent;border-color:rgba(255,109,127,.6);color:var(--red)}
+.btn.block{width:100%}
+.btn.sm{padding:8px 12px;font-size:.88rem;border-radius:var(--r-sm)}
+.punch{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn.big{min-height:96px;font-size:1.5rem;letter-spacing:.2em;border-radius:var(--r-lg);position:relative}
+.btn.big small{display:block;font-size:.72rem;letter-spacing:.04em;font-weight:500;opacity:.85;margin-top:2px}
+.btn.in{background:linear-gradient(160deg,#5fe4ff,#1aa9da);border:none;color:#022235;
+  box-shadow:0 8px 24px rgba(31,168,214,.35),inset 0 1px 0 rgba(255,255,255,.5)}
+.btn.out{background:var(--panel2);border:2px solid var(--cyan);color:var(--cyan)}
+.punch2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.btn.mid{min-height:58px;font-size:1.05rem;border-color:rgba(255,184,77,.55);color:var(--amber);background:rgba(255,184,77,.07)}
+.decl{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}
+.chip.leave[aria-pressed="true"]{border-color:var(--cyan);background:rgba(83,220,255,.18)}
+.chip{border:1px dashed #4a72b8;background:transparent;color:var(--muted);border-radius:999px;padding:7px 16px;font-size:.88rem;font-weight:500}
+.chip[aria-pressed="true"]{border-style:solid;border-color:var(--red);color:#fff;background:rgba(255,109,127,.22)}
+.log{margin-top:18px;background:rgba(15,44,99,.7);border:1px solid var(--line);border-radius:var(--r-lg);padding:6px 16px}
+.log .row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(36,82,156,.6)}
+.log .row:last-child{border-bottom:none}
+.log .k{width:5.5em;color:var(--muted);font-size:.88rem}
+.log .v{font-family:var(--num);font-size:1.35rem;font-weight:600;font-variant-numeric:tabular-nums;flex:1}
+.log .p{font-size:.78rem;color:var(--muted);text-align:right}
+.log .p a{color:var(--cyan)}
+.log .p .ng{color:var(--amber)}
+.log .empty{padding:12px 0;color:var(--muted);font-size:.9rem;text-align:center}
+
+/* ---------- lists ---------- */
+.monthnav{display:flex;align-items:center;justify-content:space-between;margin:8px 0 12px}
+.monthnav .m{font-family:var(--num);font-size:1.5rem;font-weight:600}
+.monthnav .m span{font-family:var(--font);font-size:.9rem;margin-left:2px}
+.daylist{display:flex;flex-direction:column;gap:8px}
+.day{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1px solid var(--line);
+  background:rgba(15,44,99,.75);border-radius:var(--r-md);padding:10px 12px}
+.day .d{width:3.2em;text-align:center;line-height:1.15}
+.day .d b{display:block;font-family:var(--num);font-size:1.5rem;font-weight:600}
+.day .d span{font-size:.75rem;color:var(--muted)}
+.day .d.sun span{color:#ff9aa6}.day .d.sat span{color:#9ad7ff}
+.day .body{flex:1;min-width:0}
+.day .t{font-family:var(--num);font-size:1.15rem;font-weight:600;font-variant-numeric:tabular-nums}
+.day .sub{font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tags{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;max-width:40%}
+.tag{font-size:.7rem;padding:2px 7px;border-radius:6px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.tag.r{border-color:rgba(255,109,127,.6);color:#ffb1bb}
+.tag.a{border-color:rgba(255,184,77,.6);color:#ffd59a}
+.tag.c{border-color:rgba(83,220,255,.6);color:var(--cyan)}
+.empty-state{border:1px dashed var(--line);border-radius:var(--r-md);padding:28px 16px;text-align:center;color:var(--muted);font-size:.92rem}
+
+/* ---------- forms ---------- */
+.card{background:rgba(15,44,99,.8);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;margin-bottom:12px}
+.field{display:block;margin-bottom:12px}
+.field>span{display:block;font-size:.82rem;color:var(--muted);margin-bottom:4px}
+input[type=text],input[type=email],input[type=date],input[type=month],input[type=time],input[type=datetime-local],select,textarea{
+  width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-sm);padding:11px 12px;
+  font-size:16px;min-height:46px;color-scheme:dark}
+textarea{min-height:72px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--cyan);outline:none;box-shadow:0 0 0 3px rgba(83,220,255,.25)}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+input,select,textarea{min-width:0;max-width:100%}
+input[type=date],input[type=month],input[type=time],input[type=datetime-local]{-webkit-appearance:none;appearance:none;display:block;text-align:left}
+input::-webkit-date-and-time-value{text-align:left}
+.row2 .field{margin-bottom:8px}
+.hint{font-size:.8rem;color:var(--muted);margin:4px 2px 0}
+.err{color:var(--red);font-size:.85rem;margin:6px 0 0;min-height:1.2em}
+.stack{display:flex;flex-direction:column;gap:10px}
+.shiftcard{padding:0;margin-bottom:10px}
+.shiftcard>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer}
+.shiftcard>summary::-webkit-details-marker{display:none}
+.shiftcard[open]>summary{border-bottom:1px solid var(--line)}
+.shiftcard>*:not(summary){margin-left:16px;margin-right:16px}
+.shiftcard>.sc-head{margin-top:14px}
+.shiftcard>.sc-clear{margin-bottom:14px}
+.sc-sum{flex:1;display:flex;flex-direction:column;line-height:1.3;min-width:0}
+.sc-sum b{font-weight:700}
+.sc-sum span{font-family:var(--num);font-size:1.05rem;color:var(--cyan)}
+.sc-sum.muted{color:var(--muted)}
+.chev{width:10px;height:10px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .2s;margin-right:4px}
+.shiftcard[open] .chev{transform:rotate(-135deg)}
+.shiftcard .sc-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.shiftcard .no{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+  font-family:var(--num);font-weight:700;font-size:1.15rem;color:#032234;background:var(--cyan)}
+.shiftcard .sc-head input{flex:1}
+.brkrow{display:grid;grid-template-columns:3.2em minmax(0,1fr) auto minmax(0,1fr);gap:6px;align-items:center;margin-bottom:6px}
+.brkrow .l{font-size:.78rem;color:var(--muted)}
+.brkrow .sep{color:var(--muted)}
+.next{font-size:.75rem;color:var(--amber);margin-left:6px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 14px}
+.stat{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-md);padding:10px;text-align:center}
+.stat b{display:block;font-family:var(--num);font-size:1.7rem;font-weight:600;line-height:1.1}
+.stat span{font-size:.72rem;color:var(--muted)}
+
+/* ---------- tabs ---------- */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(7,26,61,.94);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:1px solid var(--line);
+  padding-bottom:var(--sab)}
+.tabs .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+.tabs button{background:none;border:none;color:var(--muted);padding:9px 0 8px;font-size:.7rem;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tabs svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tabs button.active{color:var(--cyan)}
+
+/* ---------- sheet & toast ---------- */
+.sheet{position:fixed;inset:0;z-index:50;display:none}
+.sheet.open{display:block}
+.sheet-back{position:absolute;inset:0;background:rgba(2,10,28,.7)}
+.sheet-body{position:absolute;left:0;right:0;bottom:0;max-height:92%;overflow:auto;
+  background:var(--bg2);border-top:1px solid var(--cyan);border-radius:22px 22px 0 0;
+  padding:20px 18px calc(var(--sab) + 20px);max-width:560px;margin:0 auto;animation:up .22s ease}
+@keyframes up{from{transform:translateY(30px);opacity:.4}to{transform:none;opacity:1}}
+.sheet-body h2{margin:0 0 6px;font-size:1.15rem}
+.sheet-body .msg{color:var(--muted);margin:0 0 16px;white-space:pre-wrap}
+.sheet-actions{display:flex;gap:10px;margin-top:16px}
+.sheet-actions .btn{flex:1;min-height:52px}
+.pick{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.pick button{text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:var(--r-md);padding:12px 14px;display:flex;align-items:center;gap:12px}
+.pick .no{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-family:var(--num);font-weight:700;font-size:1.2rem;color:#032234;background:var(--cyan)}
+.pick .nm{font-weight:700}
+.pick .tm{font-family:var(--num);font-size:1.1rem;color:var(--cyan)}
+.pick .bk{font-size:.75rem;color:var(--muted)}
+.pick button.none .no{background:transparent;border:1px dashed var(--muted);color:var(--muted)}
+.hist{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);margin-top:14px;padding-top:10px}
+.hist li{margin-bottom:6px}
+.edgrp{border:1px solid var(--line);border-radius:var(--r-md);padding:10px 12px 2px;margin-bottom:10px}
+.edgrp>b{display:block;font-size:.85rem;color:var(--cyan);margin-bottom:6px}
+.edgrp .field{display:grid;grid-template-columns:2.6em minmax(0,1fr);align-items:center;gap:8px;margin-bottom:8px}
+.edgrp .field>span{margin:0}
+.check{display:flex;align-items:center;gap:8px;font-size:.95rem}
+.check input{width:22px;height:22px;accent-color:var(--cyan)}
+
+.toast{position:fixed;left:50%;bottom:calc(var(--sab) + 88px);transform:translateX(-50%) translateY(20px);
+  z-index:60;background:#e8f1ff;color:#06204a;padding:12px 18px;border-radius:12px;font-weight:700;font-size:.92rem;
+  opacity:0;pointer-events:none;transition:.25s;max-width:90vw;text-align:center;box-shadow:0 8px 28px rgba(0,0,0,.4)}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.toast.err{background:var(--red);color:#fff}
+.toast.ok{background:var(--cyan);color:#032234}
+.ver{font-size:.75rem;color:var(--muted);text-align:center;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="11" fill="none" stroke="#53dcff" stroke-width="2.4" stroke-dasharray="52 70" transform="rotate(-90 13 13)"/><path d="M13 7v6l4 3" stroke="#e8f1ff" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
+      <span>勤怠打刻</span>
+    </div>
+    <div class="who" id="who"></div>
+  </header>
+
+  <!-- 打刻 -->
+  <section class="view active" id="v-home" aria-label="打刻">
+    <div id="alert"></div>
+    <div class="gauge-wrap">
+      <svg class="gauge" viewBox="0 0 260 260" aria-hidden="true">
+        <g id="ticks"></g>
+        <circle class="track" cx="130" cy="130" r="104"/>
+        <circle class="prog" id="prog" cx="130" cy="130" r="104" transform="rotate(-90 130 130)"/>
+        <circle class="sec" id="secdot" cx="130" cy="14" r="3.5"/>
+      </svg>
+      <div class="readout">
+        <div class="date" id="h-date"></div>
+        <div class="time"><span id="h-hm">--:--</span><span class="s" id="h-s">--</span></div>
+        <div class="status" id="h-status">勤務外</div>
+      </div>
+    </div>
+    <div class="shiftline" id="h-shift"></div>
+    <div class="punch">
+      <button class="btn big in" id="b-in">出勤<small>シフトを選んで記録</small></button>
+      <button class="btn big out" id="b-out">退勤<small>時刻と現在地を記録</small></button>
+    </div>
+    <div class="punch2">
+      <button class="btn mid" id="b-bs">休憩開始</button>
+      <button class="btn mid" id="b-be">休憩終了</button>
+    </div>
+    <div class="decl">
+      <button class="chip" id="b-late" aria-pressed="false">遅刻を申告</button>
+      <button class="chip" id="b-early" aria-pressed="false">早退を申告</button>
+      <button class="chip leave" id="b-leave" aria-pressed="false">休暇を申告</button>
+    </div>
+    <div class="log" id="h-log"></div>
+  </section>
+
+  <!-- 履歴 -->
+  <section class="view" id="v-hist" aria-label="履歴">
+    <h1 class="vt">記録の確認・修正</h1>
+    <div class="monthnav">
+      <button class="btn sm ghost" id="hm-prev" aria-label="前の月">前の月</button>
+      <div class="m" id="hm-label"></div>
+      <button class="btn sm ghost" id="hm-next" aria-label="次の月">次の月</button>
+    </div>
+    <div class="daylist" id="h-list"></div>
+    <button class="btn block ghost" id="h-add" style="margin-top:14px">日付を指定して記録を追加</button>
+  </section>
+
+  <!-- 休暇 -->
+  <section class="view" id="v-leave" aria-label="休暇・区分">
+    <h1 class="vt">休暇・勤怠区分の申告</h1>
+    <div class="card">
+      <label class="field"><span>日付（過去・未来とも登録できます）</span><input type="date" id="lv-date"></label>
+      <label class="field"><span>区分</span>
+        <select id="lv-type"></select></label>
+      <label class="field"><span>備考（任意）</span><input type="text" id="lv-note" placeholder="例：通院のため"></label>
+      <button class="btn primary block" id="lv-save" style="min-height:52px">申告する</button>
+    </div>
+    <h2 class="st">申告済みの休暇・区分</h2>
+    <div class="daylist" id="lv-list"></div>
+  </section>
+
+  <!-- 送信 -->
+  <section class="view" id="v-send" aria-label="CSV送信">
+    <h1 class="vt">月末のCSV送付</h1>
+    <div class="card">
+      <label class="field"><span>対象月（1日〜月末）</span><input type="month" id="cs-month"></label>
+      <div class="stats" id="cs-stats"></div>
+      <div id="cs-warn"></div>
+      <div class="stack">
+        <button class="btn primary block" id="cs-share" style="min-height:56px">LINE・メールで送る</button>
+        <button class="btn block" id="cs-save">ファイルとして保存</button>
+        <button class="btn block ghost" id="cs-mail">メール作成画面を開く</button>
+      </div>
+      <p class="hint">「LINE・メールで送る」を押すと、送り先アプリを選ぶ画面が開きます。ファイルはExcelで開ける形式（Shift_JIS）です。</p>
+    </div>
+  </section>
+
+  <!-- 設定 -->
+  <section class="view" id="v-set" aria-label="設定">
+    <h1 class="vt">設定</h1>
+    <div class="card">
+      <label class="field"><span>氏名</span><input type="text" id="st-name" autocomplete="name"></label>
+      <label class="field"><span>社員番号（任意）</span><input type="text" id="st-emp" inputmode="text"></label>
+      <label class="field"><span>CSVの送付先メールアドレス（任意）</span><input type="email" id="st-mail" placeholder="例：soumu@example.jp"></label>
+      <button class="btn primary block" id="st-save">基本情報を保存</button>
+    </div>
+
+    <h2 class="st">シフト登録（最大10件）</h2>
+    <p class="hint" style="margin-bottom:10px">終業が始業より早い時刻なら、翌日の終業として扱います。休憩は5件まで登録できます。シフトを押すと開きます。</p>
+    <div id="st-shifts"></div>
+    <p class="err" id="st-shift-err"></p>
+    <button class="btn primary block" id="st-shift-save" style="min-height:52px">シフトを保存</button>
+
+    <h2 class="st">データの管理</h2>
+    <div class="card stack">
+      <button class="btn block" id="st-backup">バックアップを作成</button>
+      <button class="btn block" id="st-restore">バックアップから復元</button>
+      <input type="file" id="st-file" accept="application/json,.json" hidden>
+      <button class="btn block danger" id="st-wipe">この端末のデータをすべて削除</button>
+      <p class="hint">記録はこの端末の中だけに保存されます。機種変更の前にバックアップを作成してください。</p>
+    </div>
+    <p class="ver" id="ver"></p>
+  </section>
+</div>
+
+<nav class="tabs" aria-label="画面切り替え">
+  <div class="in">
+    <button data-v="home" class="active"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>打刻</button>
+    <button data-v="hist"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>履歴</button>
+    <button data-v="leave"><svg viewBox="0 0 24 24"><path d="M4 20c4-1 6-5 8-9 2 4 4 8 8 9"/><circle cx="12" cy="6" r="2.5"/></svg>休暇</button>
+    <button data-v="send"><svg viewBox="0 0 24 24"><path d="M21 3 10 14M21 3l-7 18-4-7-7-4z"/></svg>送信</button>
+    <button data-v="set"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>設定</button>
+  </div>
+</nav>
+
+<div class="sheet" id="sheet"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ===================== 基本定義 ===================== */
+const APP_VERSION = '1.3.0';
+const MAX_SHIFTS = 10;      // 登録できるシフト数
+const MAX_SHIFT_BREAKS = 5; // 1シフトに登録できる休憩数
+const MAX_BREAKS = 5;       // 1勤務で打刻できる休憩回数
+const BR_IDX = Array.from({length:MAX_BREAKS}, (_, i) => i);
+const KEY = 'kintai.v1';
+const LEAVES = ['有給休暇','午前半休','午後半休','代休','振休','特別休暇','欠勤'];
+const WD = ['日','月','火','水','木','金','土'];
+const DAY = 86400000;
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2,'0');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const dkey = t => { const d = new Date(t); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; };
+const mkey = t => dkey(t).slice(0,7);
+const hm = t => { const d = new Date(t); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const parseKey = k => { const [y,m,d] = k.split('-').map(Number); return new Date(y,m-1,d); };
+const atTime = (k, hhmm) => { const d = parseKey(k); const [h,m] = hhmm.split(':').map(Number); d.setHours(h,m,0,0); return d.getTime(); };
+const toLocal = t => t == null ? '' : `${dkey(t)}T${hm(t)}`;
+const fromLocal = v => { if (!v) return null; const t = new Date(v).getTime(); return isNaN(t) ? null : t; };
+const mdw = k => { const d = parseKey(k); return `${d.getMonth()+1}/${d.getDate()}（${WD[d.getDay()]}）`; };
+/* 勤務日を基準にした時刻表示（翌日なら「翌」を付ける） */
+function rel(t, k){
+  if (t == null) return '';
+  const base = parseKey(k), d = new Date(t);
+  const diff = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - base) / DAY);
+  if (diff === 0) return hm(t);
+  if (diff === 1) return '翌' + hm(t);
+  return `${d.getMonth()+1}/${d.getDate()} ${hm(t)}`;
+}
+
+/* ===================== データ保存 ===================== */
+function blankShift(){ return { name:'', start:'', end:'', breaks:Array.from({length:MAX_SHIFT_BREAKS}, () => ({s:'',e:''})) }; }
+function blank(){ return { settings:{name:'',empId:'',mailTo:''}, shifts:Array.from({length:MAX_SHIFTS}, blankShift), records:{} }; }
+let S = blank();
+function load(){
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      S = blank();
+      Object.assign(S.settings, d.settings || {});
+      (d.shifts || []).slice(0,MAX_SHIFTS).forEach((s,i) => {
+        const b = blankShift();
+        S.shifts[i] = { name:s.name||'', start:s.start||'', end:s.end||'',
+          breaks: b.breaks.map((x,j) => ({ s:(s.breaks&&s.breaks[j]&&s.breaks[j].s)||'', e:(s.breaks&&s.breaks[j]&&s.breaks[j].e)||'' })) };
+      });
+      S.records = d.records || {};
+    }
+  } catch(e) { console.error(e); S = blank(); }
+}
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(S)); return true; }
+  catch(e){ toast('保存できませんでした。端末の空き容量を確認してください','err'); return false; }
+}
+function newRec(k){ return { date:k, shift:null, in:null, out:null, breaks:[], late:false, early:false, leave:'', note:'', edited:false, log:[] }; }
+function addLog(rec, kind, text, reason){ rec.log.push({ at:Date.now(), kind, text, reason: reason || '' }); }
+function activeKey(){
+  const ks = Object.keys(S.records).filter(k => S.records[k].in && !S.records[k].out).sort();
+  return ks.length ? ks[ks.length-1] : null;
+}
+const openBreak = rec => rec.breaks.find(b => b.s && !b.e);
+function shiftName(sh){ return sh ? (sh.name || `シフト${sh.no}`) : ''; }
+function shiftRange(sh, k){
+  if (!sh || !sh.start || !sh.end) return null;
+  const s = atTime(k, sh.start); let e = atTime(k, sh.end); if (e <= s) e += DAY;
+  return { s, e };
+}
+function definedShifts(){
+  return S.shifts.map((s,i) => ({...s, no:i+1})).filter(s => s.start && s.end);
+}
+function snapshot(sh){
+  return { no:sh.no, name:sh.name || `シフト${sh.no}`, start:sh.start, end:sh.end,
+    breaks: sh.breaks.filter(b => b.s && b.e).map(b => ({s:b.s, e:b.e})) };
+}
+
+/* ===================== 位置情報 ===================== */
+function getPos(){
+  return new Promise(res => {
+    if (!('geolocation' in navigator)) return res({ err:'この端末は位置情報に対応していません' });
+    navigator.geolocation.getCurrentPosition(
+      p => res({ lat:+p.coords.latitude.toFixed(6), lng:+p.coords.longitude.toFixed(6), acc:Math.round(p.coords.accuracy) }),
+      e => res({ err: ({1:'位置情報の利用が許可されていません',2:'現在地を特定できませんでした',3:'位置情報の取得に時間がかかりすぎました'})[e.code] || '位置情報を取得できませんでした' }),
+      { enableHighAccuracy:true, timeout:15000, maximumAge:0 }
+    );
+  });
+}
+function setPos(p, r){ p.locating = false; if (r.err){ p.pos = null; p.posErr = r.err; } else { p.pos = r; p.posErr = ''; } }
+const mapUrl = p => `https://www.google.com/maps?q=${p.lat},${p.lng}`;
+
+/* ===================== 画面部品 ===================== */
+let toastTimer;
+function toast(msg, type){
+  const t = $('#toast'); t.textContent = msg; t.className = 'toast show ' + (type || '');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.className = 'toast', 2800);
+}
+function openSheet(html){
+  const s = $('#sheet');
+  s.innerHTML = `<div class="sheet-back"></div><div class="sheet-body" role="dialog" aria-modal="true">${html}</div>`;
+  s.classList.add('open'); document.body.classList.add('noscroll');
+  return s.querySelector('.sheet-body');
+}
+function closeSheet(){ const s = $('#sheet'); s.classList.remove('open'); s.innerHTML = ''; document.body.classList.remove('noscroll'); }
+function ask(title, msg, btns){
+  return new Promise(res => {
+    const b = openSheet(`<h2>${esc(title)}</h2><p class="msg">${esc(msg)}</p>
+      <div class="sheet-actions">${btns.map((x,i) => `<button class="btn ${x.primary?'primary':''} ${x.danger?'danger':''} ${!x.primary&&!x.danger?'ghost':''}" data-i="${i}">${esc(x.label)}</button>`).join('')}</div>`);
+    b.querySelectorAll('[data-i]').forEach(el => el.onclick = () => { closeSheet(); res(btns[+el.dataset.i].value); });
+    $('#sheet .sheet-back').onclick = () => { closeSheet(); res(btns[0].value); };
+  });
+}
+const yesNo = (title, msg, yes, opt) => ask(title, msg, [{label:'キャンセル', value:false}, {label:yes, value:true, primary:!(opt&&opt.danger), danger:!!(opt&&opt.danger)}]);
+
+/* ===================== 打刻処理 ===================== */
+let busy = false;
+function pickShift(){
+  return new Promise(res => {
+    const list = definedShifts();
+    const items = list.map(s => `<button data-no="${s.no}"><span class="no">${s.no}</span>
+        <span><span class="nm">${esc(s.name || 'シフト'+s.no)}</span><br><span class="tm">${s.start} 〜 ${s.end}${atTime('2000-01-01',s.end) <= atTime('2000-01-01',s.start) ? '（翌日）' : ''}</span><br>
+        <span class="bk">${s.breaks.filter(b=>b.s&&b.e).map(b=>`休憩 ${b.s}〜${b.e}`).join('　') || '休憩の登録なし'}</span></span></button>`).join('');
+    const b = openSheet(`<h2>出勤するシフトを選択</h2>
+      <p class="msg">選ぶとすぐに出勤時刻と現在地を記録します。</p>
+      ${list.length ? '' : '<p class="hint" style="margin-bottom:8px">シフトが未登録です。「設定」から登録できます。</p>'}
+      <div class="pick">${items}
+        <button class="none" data-no="0"><span class="no">－</span><span><span class="nm">シフトを選ばずに出勤</span></span></button></div>
+      <button class="btn ghost block" id="pk-cancel">キャンセル</button>`);
+    b.querySelectorAll('[data-no]').forEach(el => el.onclick = () => {
+      const no = +el.dataset.no; closeSheet();
+      res(no ? snapshot(list.find(s => s.no === no)) : null);
+    });
+    $('#pk-cancel').onclick = () => { closeSheet(); res(undefined); };
+    $('#sheet .sheet-back').onclick = () => { closeSheet(); res(undefined); };
+  });
+}
+
+async function doIn(){
+  if (busy) return;
+  if (activeKey()) return toast('すでに出勤中です');
+  const k0 = dkey(Date.now());
+  if (S.records[k0] && S.records[k0].in) return toast('本日の出勤は記録済みです。修正は「履歴」から行えます','err');
+  const sh = await pickShift();
+  if (sh === undefined) return;
+  busy = true;
+  try {
+    const now = Date.now(), k = dkey(now);
+    const rec = S.records[k] || newRec(k); S.records[k] = rec;
+    rec.shift = sh;
+    rec.in = { t:now, pos:null, posErr:'', locating:true, manual:false };
+    addLog(rec, '打刻', `出勤 ${hm(now)}`);
+    save(); renderAll(); toast(`出勤 ${hm(now)} を記録しました`, 'ok');
+    const posP = getPos();
+    const r = shiftRange(sh, k);
+    if (r && now - r.s >= 60000 && now - r.s < 12*3600000 && !rec.late) {
+      const yes = await ask('遅刻の申告', `始業時刻 ${sh.start} を過ぎています。遅刻として申告しますか？`,
+        [{label:'申告しない', value:false}, {label:'遅刻として申告', value:true, primary:true}]);
+      if (yes) { rec.late = true; addLog(rec, '申告', '遅刻を申告'); save(); renderAll(); }
+    }
+    setPos(rec.in, await posP); save(); renderAll();
+    if (rec.in.posErr) toast('現在地を取得できませんでした（時刻は記録済み）', 'err');
+  } finally { busy = false; }
+}
+
+async function doOut(){
+  if (busy) return;
+  const k = activeKey(); if (!k) return toast('出勤の記録がありません');
+  const rec = S.records[k], ob = openBreak(rec);
+  const ok = ob ? await yesNo('休憩中です', '休憩を終了してから退勤を記録します。よろしいですか？', '休憩を終了して退勤')
+                : await yesNo('退勤の記録', `${mdw(k)} の勤務の退勤を記録します。`, '退勤する');
+  if (!ok) return;
+  busy = true;
+  try {
+    const now = Date.now();
+    if (ob) { ob.e = now; addLog(rec, '打刻', `休憩終了 ${hm(now)}`); }
+    rec.out = { t:now, pos:null, posErr:'', locating:true, manual:false };
+    addLog(rec, '打刻', `退勤 ${rel(now, k)}`);
+    save(); renderAll(); toast(`退勤 ${hm(now)} を記録しました`, 'ok');
+    const posP = getPos();
+    const r = shiftRange(rec.shift, k);
+    if (r && r.e - now >= 60000 && r.e - now < 12*3600000 && !rec.early) {
+      const yes = await ask('早退の申告', `終業時刻 ${rec.shift.end} より前です。早退として申告しますか？`,
+        [{label:'申告しない', value:false}, {label:'早退として申告', value:true, primary:true}]);
+      if (yes) { rec.early = true; addLog(rec, '申告', '早退を申告'); save(); renderAll(); }
+    }
+    setPos(rec.out, await posP); save(); renderAll();
+    if (rec.out.posErr) toast('現在地を取得できませんでした（時刻は記録済み）', 'err');
+  } finally { busy = false; }
+}
+
+function doBreak(start){
+  const k = activeKey(); if (!k) return toast('出勤後に記録できます');
+  const rec = S.records[k], ob = openBreak(rec), now = Date.now();
+  if (start) {
+    if (ob) return toast('休憩中です');
+    if (rec.breaks.length >= MAX_BREAKS) return toast(`休憩は1勤務につき${MAX_BREAKS}回まで記録できます`,'err');
+    rec.breaks.push({ s:now, e:null });
+    addLog(rec, '打刻', `休憩${rec.breaks.length}開始 ${rel(now,k)}`);
+    toast(`休憩開始 ${hm(now)} を記録しました`, 'ok');
+  } else {
+    if (!ob) return toast('休憩中ではありません');
+    ob.e = now;
+    addLog(rec, '打刻', `休憩${rec.breaks.indexOf(ob)+1}終了 ${rel(now,k)}`);
+    toast(`休憩終了 ${hm(now)} を記録しました`, 'ok');
+  }
+  save(); renderAll();
+}
+
+function targetRec(){
+  const a = activeKey(); if (a) return S.records[a];
+  const t = S.records[dkey(Date.now())]; return t && t.in ? t : null;
+}
+function toggleDecl(field, label){
+  const rec = targetRec(); if (!rec) return toast('出勤の記録後に申告できます');
+  rec[field] = !rec[field];
+  addLog(rec, '申告', rec[field] ? `${label}を申告` : `${label}の申告を取り消し`);
+  save(); renderAll(); toast(rec[field] ? `${label}を申告しました` : `${label}の申告を取り消しました`);
+}
+
+/* ===================== 打刻画面 ===================== */
+(function buildTicks(){
+  let g = '';
+  for (let i = 0; i < 60; i++){
+    const a = i * 6 * Math.PI / 180, major = i % 5 === 0;
+    const r1 = 122, r2 = major ? 113 : 117;
+    g += `<line class="tick${major?' major':''}" x1="${130+r1*Math.sin(a)}" y1="${130-r1*Math.cos(a)}" x2="${130+r2*Math.sin(a)}" y2="${130-r2*Math.cos(a)}"/>`;
+  }
+  $('#ticks').innerHTML = g;
+})();
+const CIRC = 2 * Math.PI * 104;
+$('#prog').setAttribute('stroke-dasharray', CIRC);
+
+function tick(){
+  const now = new Date();
+  $('#h-date').textContent = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${WD[now.getDay()]}）`;
+  $('#h-hm').textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  $('#h-s').textContent = pad(now.getSeconds());
+  const a = now.getSeconds() * 6 * Math.PI / 180;
+  $('#secdot').setAttribute('cx', 130 + 116*Math.sin(a)); $('#secdot').setAttribute('cy', 130 - 116*Math.cos(a));
+  // シフト進捗リング
+  const k = activeKey(), prog = $('#prog');
+  let ratio = 0, brk = false;
+  if (k) {
+    const rec = S.records[k], r = shiftRange(rec.shift, k);
+    brk = !!openBreak(rec);
+    if (r) ratio = Math.min(1, Math.max(0, (now - r.s) / (r.e - r.s)));
+    else ratio = Math.min(1, (now - rec.in.t) / (8*3600000));
+  }
+  prog.style.strokeDashoffset = CIRC * (1 - ratio);
+  prog.classList.toggle('brk', brk);
+  prog.style.opacity = k ? 1 : 0;
+}
+
+function renderHome(){
+  const k = activeKey(), today = dkey(Date.now());
+  const rec = k ? S.records[k] : S.records[today];
+  const st = $('#h-status');
+  if (k) {
+    const ob = openBreak(S.records[k]);
+    st.textContent = ob ? `休憩中（${hm(ob.s)}〜）` : '勤務中';
+    st.className = 'status ' + (ob ? 'brk' : 'on');
+  } else if (rec && rec.out) { st.textContent = '退勤済み'; st.className = 'status done'; }
+  else { st.textContent = '勤務外'; st.className = 'status'; }
+
+  // シフト表示
+  let line = '';
+  if (rec && rec.shift) line = `<b>${esc(rec.shift.name)}</b>　${rec.shift.start} 〜 ${rec.shift.end}`;
+  else if (rec && rec.in) line = 'シフト指定なし';
+  if (rec && rec.leave) line += `${line ? '　/　' : ''}<b>${esc(rec.leave)}</b>`;
+  if (k && k !== today) line = `${mdw(k)} からの勤務　` + line;
+  $('#h-shift').innerHTML = line || (definedShifts().length ? '出勤ボタンからシフトを選んでください' : 'シフトは「設定」から登録できます');
+
+  // ボタン状態
+  const ob = k ? openBreak(S.records[k]) : null;
+  $('#b-in').disabled = !!k || !!(S.records[today] && S.records[today].in);
+  $('#b-out').disabled = !k;
+  $('#b-bs').disabled = !k || !!ob || S.records[k].breaks.length >= MAX_BREAKS;
+  $('#b-be').disabled = !ob;
+  const tr = targetRec();
+  $('#b-late').setAttribute('aria-pressed', !!(tr && tr.late));
+  $('#b-early').setAttribute('aria-pressed', !!(tr && tr.early));
+  $('#b-late').textContent = tr && tr.late ? '遅刻を申告済み' : '遅刻を申告';
+  $('#b-early').textContent = tr && tr.early ? '早退を申告済み' : '早退を申告';
+  const tl = S.records[today] && S.records[today].leave;
+  $('#b-leave').setAttribute('aria-pressed', !!tl);
+  $('#b-leave').textContent = tl ? `休暇：${tl}` : '休暇を申告';
+
+  // 警告（退勤漏れ）
+  let alert = '';
+  if (k && Date.now() - S.records[k].in.t > 20*3600000) {
+    alert = `<div class="alert">${mdw(k)} の出勤から20時間以上経過しています。退勤の打刻漏れの場合は、「履歴」から退勤時刻を入力してください。
+      <br><button class="btn sm" id="al-fix">履歴で修正する</button></div>`;
+  }
+  $('#alert').innerHTML = alert;
+  if (alert) $('#al-fix').onclick = () => openEditor(k);
+
+  // 記録一覧
+  const posTxt = p => p.locating ? '<span>位置を取得中…</span>'
+      : p.pos ? `<a href="${mapUrl(p.pos)}" target="_blank" rel="noopener">地図で確認</a><br>誤差 約${p.pos.acc}m`
+      : `<span class="ng">${esc(p.posErr || '位置情報なし')}</span>`;
+  let rows = '';
+  if (rec && rec.in) {
+    rows += `<div class="row"><span class="k">出勤</span><span class="v">${rel(rec.in.t, rec.date)}</span><span class="p">${posTxt(rec.in)}</span></div>`;
+    rec.breaks.forEach((b,i) => rows += `<div class="row"><span class="k">休憩${i+1}</span><span class="v">${rel(b.s,rec.date)} 〜 ${b.e ? rel(b.e,rec.date) : ''}</span><span class="p">${b.e ? '' : '休憩中'}</span></div>`);
+    if (rec.out) rows += `<div class="row"><span class="k">退勤</span><span class="v">${rel(rec.out.t, rec.date)}</span><span class="p">${posTxt(rec.out)}</span></div>`;
+  } else rows = `<div class="empty">${rec && rec.leave ? `本日は「${esc(rec.leave)}」で登録されています` : 'まだ打刻はありません'}</div>`;
+  $('#h-log').innerHTML = rows;
+
+  const nm = S.settings.name;
+  $('#who').innerHTML = nm ? `${esc(nm)}${S.settings.empId ? `<br>${esc(S.settings.empId)}` : ''}` : '';
+}
+
+/* ===================== 履歴画面 ===================== */
+let histMonth = mkey(Date.now());
+function shiftMonth(m, d){ const [y,mo] = m.split('-').map(Number); const t = new Date(y, mo-1+d, 1); return `${t.getFullYear()}-${pad(t.getMonth()+1)}`; }
+function dayRow(k, rec, extra){
+  const d = parseKey(k), w = d.getDay();
+  const times = rec.in ? `${rel(rec.in.t,k)} 〜 ${rec.out ? rel(rec.out.t,k) : '--:--'}` : (rec.leave ? esc(rec.leave) : '打刻なし');
+  const sub = [rec.shift ? esc(rec.shift.name) : (rec.in ? 'シフト指定なし' : ''), rec.breaks.length ? `休憩${rec.breaks.length}回` : '', rec.note ? esc(rec.note) : ''].filter(Boolean).join('　');
+  const tags = [];
+  if (rec.in && !rec.out) tags.push('<span class="tag a">退勤未打刻</span>');
+  if (rec.late) tags.push('<span class="tag r">遅刻</span>');
+  if (rec.early) tags.push('<span class="tag r">早退</span>');
+  if (rec.leave && rec.in) tags.push(`<span class="tag c">${esc(rec.leave)}</span>`);
+  if (rec.edited) tags.push('<span class="tag">修正あり</span>');
+  if ((rec.in && rec.in.posErr) || (rec.out && rec.out.posErr)) tags.push('<span class="tag a">位置なし</span>');
+  return `<button class="day" data-k="${k}">
+    <div class="d ${w===0?'sun':w===6?'sat':''}"><b>${d.getDate()}</b><span>${WD[w]}曜</span></div>
+    <div class="body"><div class="t">${times}</div><div class="sub">${sub || '&nbsp;'}</div></div>
+    <div class="tags">${tags.join('')}${extra || ''}</div></button>`;
+}
+function hasContent(r){ return r.in || r.out || r.breaks.length || r.leave || r.note || r.late || r.early; }
+function renderHist(){
+  const [y,m] = histMonth.split('-').map(Number);
+  $('#hm-label').innerHTML = `${y}<span>年</span>${m}<span>月</span>`;
+  const ks = Object.keys(S.records).filter(k => k.startsWith(histMonth) && hasContent(S.records[k])).sort();
+  $('#h-list').innerHTML = ks.length ? ks.map(k => dayRow(k, S.records[k])).join('') : '<div class="empty-state">この月の記録はありません</div>';
+  $('#h-list').querySelectorAll('.day').forEach(el => el.onclick = () => openEditor(el.dataset.k));
+}
+
+/* ===================== 修正画面 ===================== */
+function openEditor(k){
+  const rec = S.records[k] || newRec(k);
+  const shiftOpts = [`<option value="keep">${rec.shift ? '変更しない（' + esc(rec.shift.name) + '）' : '変更しない（指定なし）'}</option>`, '<option value="none">シフト指定なし</option>']
+    .concat(definedShifts().map(s => `<option value="${s.no}">${esc(s.name || 'シフト'+s.no)}（${s.start}〜${s.end}）</option>`)).join('');
+  const brk = i => { const b = rec.breaks[i] || {}; return `<div class="edgrp"><b>休憩${i+1}</b>
+      <label class="field"><span>開始</span><input type="datetime-local" id="ed-b${i}s" value="${toLocal(b.s)}"></label>
+      <label class="field"><span>終了</span><input type="datetime-local" id="ed-b${i}e" value="${toLocal(b.e)}"></label></div>`; };
+  const logs = rec.log.slice().reverse().map(l => `<li>${mdw(dkey(l.at))} ${hm(l.at)}　[${esc(l.kind)}] ${esc(l.text)}${l.reason ? `（理由：${esc(l.reason)}）` : ''}</li>`).join('');
+  openSheet(`<h2>${mdw(k)} の記録</h2>
+    <p class="msg">翌日にまたがる時刻は、日付も翌日に変えて入力してください。</p>
+    <label class="field"><span>シフト</span><select id="ed-shift">${shiftOpts}</select></label>
+    <div class="edgrp"><b>出勤・退勤</b>
+      <label class="field"><span>出勤</span><input type="datetime-local" id="ed-in" value="${toLocal(rec.in && rec.in.t)}"></label>
+      <label class="field"><span>退勤</span><input type="datetime-local" id="ed-out" value="${toLocal(rec.out && rec.out.t)}"></label>
+    </div>
+    ${BR_IDX.map(brk).join('')}
+    <div class="row2" style="margin:4px 0 12px">
+      <label class="check"><input type="checkbox" id="ed-late" ${rec.late?'checked':''}>遅刻</label>
+      <label class="check"><input type="checkbox" id="ed-early" ${rec.early?'checked':''}>早退</label>
+    </div>
+    <label class="field"><span>勤怠区分</span><select id="ed-leave"><option value="">なし</option>${LEAVES.map(l => `<option ${rec.leave===l?'selected':''}>${l}</option>`).join('')}</select></label>
+    <label class="field"><span>備考</span><input type="text" id="ed-note" value="${esc(rec.note)}"></label>
+    <label class="field"><span>修正理由（変更した場合は必須）</span><input type="text" id="ed-reason" placeholder="例：退勤の打刻を忘れたため"></label>
+    <p class="err" id="ed-err"></p>
+    <div class="sheet-actions"><button class="btn ghost" id="ed-cancel">閉じる</button><button class="btn primary" id="ed-save">保存する</button></div>
+    ${logs ? `<div class="hist"><b>変更履歴</b><ul style="padding-left:1.2em;margin:6px 0 0">${logs}</ul></div>` : ''}`);
+  $('#ed-cancel').onclick = closeSheet;
+  $('#sheet .sheet-back').onclick = closeSheet;
+  $('#ed-save').onclick = () => saveEditor(k);
+}
+function saveEditor(k){
+  const err = m => { $('#ed-err').textContent = m; };
+  const rec = S.records[k] || newRec(k);
+  const v = id => $(id).value;
+  const nIn = fromLocal(v('#ed-in')), nOut = fromLocal(v('#ed-out'));
+  const nBr = BR_IDX.map(i => ({ s:fromLocal(v(`#ed-b${i}s`)), e:fromLocal(v(`#ed-b${i}e`)) })).filter(b => b.s || b.e);
+  if (nOut && !nIn) return err('出勤時刻を入力してください');
+  if (nIn && dkey(nIn) !== k) return err(`出勤日は ${mdw(k)} にしてください`);
+  if (nIn && nOut && nOut <= nIn) return err('退勤は出勤より後の時刻にしてください');
+  if (nIn && nOut && nOut - nIn > 2*DAY) return err('出勤から退勤までが48時間を超えています');
+  for (const [i,b] of nBr.entries()) {
+    if (!b.s) return err(`休憩${i+1}の開始時刻を入力してください`);
+    if (b.e && b.e <= b.s) return err(`休憩${i+1}の終了は開始より後にしてください`);
+    if (!nIn) return err('休憩を入力する場合は出勤時刻も入力してください');
+    if (b.s < nIn || (nOut && b.e && b.e > nOut)) return err(`休憩${i+1}は出勤から退勤の間にしてください`);
+  }
+  if (nIn && !nOut) { const a = activeKey(); if (a && a !== k) return err(`${mdw(a)} に退勤未打刻の勤務があります。先にそちらを修正してください`); }
+
+  const ch = [], tl = t => t ? rel(t, k) : '（なし）';
+  const oIn = rec.in ? rec.in.t : null, oOut = rec.out ? rec.out.t : null;
+  if (toLocal(oIn) !== toLocal(nIn)) ch.push(`出勤 ${tl(oIn)}→${tl(nIn)}`);
+  if (toLocal(oOut) !== toLocal(nOut)) ch.push(`退勤 ${tl(oOut)}→${tl(nOut)}`);
+  for (let i = 0; i < MAX_BREAKS; i++) {
+    const o = rec.breaks[i] || {}, n = nBr[i] || {};
+    if (toLocal(o.s) !== toLocal(n.s) || toLocal(o.e) !== toLocal(n.e))
+      ch.push(`休憩${i+1} ${o.s ? tl(o.s)+'〜'+(o.e?tl(o.e):'') : '（なし）'}→${n.s ? tl(n.s)+'〜'+(n.e?tl(n.e):'') : '（なし）'}`);
+  }
+  const sv = v('#ed-shift'); let nShift = rec.shift;
+  if (sv === 'none' && rec.shift) { nShift = null; ch.push(`シフト ${rec.shift.name}→指定なし`); }
+  else if (sv !== 'keep' && sv !== 'none') { nShift = snapshot(definedShifts().find(s => s.no === +sv)); ch.push(`シフト ${rec.shift ? rec.shift.name : '指定なし'}→${nShift.name}`); }
+  const nLate = $('#ed-late').checked, nEarly = $('#ed-early').checked, nLeave = v('#ed-leave'), nNote = v('#ed-note').trim();
+  if (nLate !== rec.late) ch.push(nLate ? '遅刻を設定' : '遅刻を解除');
+  if (nEarly !== rec.early) ch.push(nEarly ? '早退を設定' : '早退を解除');
+  if (nLeave !== rec.leave) ch.push(`区分 ${rec.leave || 'なし'}→${nLeave || 'なし'}`);
+  if (nNote !== rec.note) ch.push('備考を変更');
+  if (!ch.length) return closeSheet();
+  const reason = v('#ed-reason').trim();
+  if (!reason) return err('修正理由を入力してください');
+
+  const setP = (o, t) => { if (!t) return null; if (o) { if (toLocal(o.t) !== toLocal(t)) { o.t = t; o.manual = true; } return o; } return { t, pos:null, posErr:'手入力のため位置情報なし', manual:true }; };
+  rec.in = setP(rec.in, nIn); rec.out = setP(rec.out, nOut);
+  rec.breaks = nBr; rec.shift = nShift; rec.late = nLate; rec.early = nEarly; rec.leave = nLeave; rec.note = nNote;
+  rec.edited = true; addLog(rec, '修正', ch.join('、'), reason);
+  S.records[k] = rec; save(); closeSheet(); renderAll(); toast('修正を保存しました', 'ok');
+}
+function askDateThenEdit(){
+  const b = openSheet(`<h2>記録を追加する日付</h2><p class="msg">打刻を忘れた日などの記録を追加できます。</p>
+    <label class="field"><span>勤務日（出勤した日）</span><input type="date" id="ad-date" value="${dkey(Date.now())}"></label>
+    <div class="sheet-actions"><button class="btn ghost" id="ad-c">キャンセル</button><button class="btn primary" id="ad-ok">次へ</button></div>`);
+  $('#ad-c').onclick = closeSheet; $('#sheet .sheet-back').onclick = closeSheet;
+  $('#ad-ok').onclick = () => { const k = $('#ad-date').value; if (!k) return; closeSheet(); openEditor(k); };
+}
+
+/* ===================== 休暇画面 ===================== */
+function renderLeave(){
+  if (!$('#lv-date').value) $('#lv-date').value = dkey(Date.now());
+  const from = shiftMonth(mkey(Date.now()), -1) + '-01';
+  const ks = Object.keys(S.records).filter(k => k >= from && S.records[k].leave).sort();
+  $('#lv-list').innerHTML = ks.length ? ks.map(k => {
+    const r = S.records[k];
+    return `<div class="day" style="cursor:default"><div class="d ${parseKey(k).getDay()===0?'sun':parseKey(k).getDay()===6?'sat':''}"><b>${parseKey(k).getDate()}</b><span>${parseKey(k).getMonth()+1}月 ${WD[parseKey(k).getDay()]}曜</span></div>
+      <div class="body"><div class="t" style="font-family:var(--font);font-size:1rem">${esc(r.leave)}</div><div class="sub">${esc(r.note) || '&nbsp;'}</div></div>
+      <button class="btn sm danger" data-del="${k}">取り消す</button></div>`;
+  }).join('') : '<div class="empty-state">先月以降の登録はありません</div>';
+  $('#lv-list').querySelectorAll('[data-del]').forEach(el => el.onclick = () => cancelLeave(el.dataset.del));
+}
+/* 休暇の登録（打刻画面・休暇画面で共通） */
+async function applyLeave(k, type, note){
+  const rec = S.records[k] || newRec(k);
+  if (rec.leave === type && !note) { toast(`${mdw(k)} は既に「${type}」で申告済みです`); return false; }
+  if (rec.leave && rec.leave !== type && !await yesNo('区分の変更', `${mdw(k)} は「${rec.leave}」で申告済みです。「${type}」に変更しますか？`, '変更する')) return false;
+  addLog(rec, '休暇', rec.leave && rec.leave !== type ? `${rec.leave}→${type} に変更` : `${type} を申告`);
+  rec.leave = type; if (note) rec.note = note;
+  S.records[k] = rec; save(); renderAll();
+  toast(`${mdw(k)} に「${type}」を申告しました`, 'ok'); return true;
+}
+async function cancelLeave(k){
+  const r = S.records[k]; if (!r || !r.leave) return;
+  if (!await yesNo('申告の取り消し', `${mdw(k)} の「${r.leave}」を取り消しますか？`, '取り消す', {danger:true})) return;
+  addLog(r, '休暇', `${r.leave} を取り消し`); r.leave = ''; save(); renderAll(); toast('取り消しました');
+}
+function openLeaveSheet(k){
+  const cur = () => { const r = S.records[$('#ls-date').value]; return r ? r.leave : ''; };
+  openSheet(`<h2>休暇の申告</h2><p class="msg">遅刻・早退と同じように、休暇や勤怠区分を申告します。半休の日は、出勤・退勤の打刻もふだんどおり行ってください。</p>
+    <label class="field"><span>日付</span><input type="date" id="ls-date" value="${k}"></label>
+    <label class="field"><span>区分</span><select id="ls-type">${LEAVES.map(l => `<option>${l}</option>`).join('')}</select></label>
+    <label class="field"><span>備考（任意）</span><input type="text" id="ls-note" placeholder="例：通院のため"></label>
+    <p class="hint" id="ls-cur"></p>
+    <div class="sheet-actions"><button class="btn ghost" id="ls-c">閉じる</button><button class="btn primary" id="ls-ok">申告する</button></div>
+    <button class="btn danger block" id="ls-del" style="margin-top:10px">この日の申告を取り消す</button>`);
+  const sync = () => { const c = cur(); $('#ls-cur').textContent = c ? `この日は「${c}」で申告済みです。` : '';
+    $('#ls-del').style.display = c ? '' : 'none'; if (c) $('#ls-type').value = c; };
+  sync(); $('#ls-date').onchange = sync;
+  $('#ls-c').onclick = closeSheet; $('#sheet .sheet-back').onclick = closeSheet;
+  $('#ls-ok').onclick = async () => { const d = $('#ls-date').value; if (!d) return toast('日付を選んでください', 'err');
+    const t = $('#ls-type').value, n = $('#ls-note').value.trim(); closeSheet(); await applyLeave(d, t, n); };
+  $('#ls-del').onclick = async () => { const d = $('#ls-date').value; closeSheet(); await cancelLeave(d); };
+}
+async function saveLeave(){
+  const k = $('#lv-date').value, type = $('#lv-type').value, note = $('#lv-note').value.trim();
+  if (!k) return toast('日付を選んでください', 'err');
+  if (await applyLeave(k, type, note)) $('#lv-note').value = '';
+}
+
+/* ===================== CSV ===================== */
+const CSV_HEAD = ['日付','曜日','氏名','社員番号','シフト','シフト始業','シフト終業','出勤時刻','退勤時刻',
+  ...BR_IDX.flatMap(i => [`休憩${i+1}開始`, `休憩${i+1}終了`]),'遅刻','早退','勤怠区分','備考',
+  '出勤_緯度','出勤_経度','出勤_誤差m','出勤_地図','退勤_緯度','退勤_経度','退勤_誤差m','退勤_地図','位置情報の状況','修正有無','修正履歴'];
+function buildCsv(month){
+  const [y,m] = month.split('-').map(Number), days = new Date(y, m, 0).getDate();
+  const q = v => `"${String(v ?? '').replace(/"/g,'""')}"`;
+  const lines = [CSV_HEAD.map(q).join(',')];
+  for (let d = 1; d <= days; d++){
+    const k = `${y}-${pad(m)}-${pad(d)}`, r = S.records[k], w = WD[new Date(y,m-1,d).getDay()];
+    const row = [`${y}/${pad(m)}/${pad(d)}`, w, S.settings.name, S.settings.empId];
+    if (!r) { lines.push(row.concat(Array(CSV_HEAD.length - 4).fill('')).map(q).join(',')); continue; }
+    const p = o => o && o.pos ? [o.pos.lat, o.pos.lng, o.pos.acc, mapUrl(o.pos)] : ['','','',''];
+    const ps = [];
+    const pst = (o, lb) => { if (!o) return; if (o.posErr) ps.push(lb + ':' + o.posErr); else if (o.manual) ps.push(lb + ':時刻を手修正（位置は打刻時点）'); };
+    pst(r.in, '出勤'); pst(r.out, '退勤');
+    const br = BR_IDX.flatMap(i => r.breaks[i] ? [rel(r.breaks[i].s,k), rel(r.breaks[i].e,k)] : ['','']);
+    const edits = r.log.filter(l => l.kind === '修正').map(l => `${mdw(dkey(l.at))} ${hm(l.at)} ${l.text}（理由:${l.reason}）`).join(' / ');
+    lines.push(row.concat([
+      r.shift ? r.shift.name : '', r.shift ? r.shift.start : '', r.shift ? r.shift.end : '',
+      r.in ? rel(r.in.t,k) : '', r.out ? rel(r.out.t,k) : (r.in ? '未打刻' : ''),
+      ...br, r.late ? '○' : '', r.early ? '○' : '', r.leave, r.note,
+      ...p(r.in), ...p(r.out), ps.join(' / '), r.edited ? 'あり' : '', edits
+    ]).map(q).join(','));
+  }
+  return lines.join('\r\n') + '\r\n';
+}
+function csvBlob(month){
+  const text = buildCsv(month);
+  if (window.Encoding) {
+    const arr = Encoding.convert(Encoding.stringToCode(text), { to:'SJIS', from:'UNICODE' });
+    return new Blob([new Uint8Array(arr)], { type:'text/csv' });
+  }
+  return new Blob(['\uFEFF' + text], { type:'text/csv' }); // 予備：UTF-8（BOM付き）
+}
+const csvName = month => `勤怠_${month.replace('-','')}_${(S.settings.name || '氏名未設定').replace(/[\\/:*?"<>|\s]/g,'')}.csv`;
+function download(blob, name){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+}
+async function shareOrSave(blob, name){
+  const f = new File([blob], name, { type: blob.type });
+  if (navigator.canShare && navigator.canShare({ files:[f] })) {
+    try { await navigator.share({ files:[f], title:name }); return 'shared'; }
+    catch(e){ if (e.name === 'AbortError') return 'abort'; }
+  }
+  download(blob, name); return 'saved';
+}
+function renderSend(){
+  if (!$('#cs-month').value) $('#cs-month').value = mkey(Date.now());
+  const m = $('#cs-month').value; if (!m) return;
+  const ks = Object.keys(S.records).filter(k => k.startsWith(m));
+  const work = ks.filter(k => S.records[k].in).length, leave = ks.filter(k => S.records[k].leave).length;
+  const edited = ks.filter(k => S.records[k].edited).length, open = ks.filter(k => S.records[k].in && !S.records[k].out);
+  $('#cs-stats').innerHTML = `<div class="stat"><b>${work}</b><span>出勤日数</span></div><div class="stat"><b>${leave}</b><span>休暇・区分</span></div><div class="stat"><b>${edited}</b><span>修正あり</span></div>`;
+  const w = [];
+  if (!S.settings.name) w.push('氏名が未設定です。「設定」で登録してください。');
+  if (open.length) w.push(`退勤が未打刻の日があります（${open.map(mdw).join('、')}）。必要に応じて「履歴」から修正してください。`);
+  $('#cs-warn').innerHTML = w.map(x => `<div class="alert" style="margin:0 0 12px">${esc(x)}</div>`).join('');
+  $('#cs-mail').style.display = S.settings.mailTo ? '' : 'none';
+}
+async function sendCsv(mode){
+  const m = $('#cs-month').value; if (!m) return toast('対象月を選んでください', 'err');
+  const blob = csvBlob(m), name = csvName(m);
+  if (mode === 'share') {
+    const r = await shareOrSave(blob, name);
+    if (r === 'saved') toast('共有に未対応のため、ファイルを保存しました');
+  } else if (mode === 'save') { download(blob, name); toast('ファイルを保存しました'); }
+  else {
+    download(blob, name);
+    const [y,mo] = m.split('-');
+    const sub = encodeURIComponent(`勤怠報告 ${y}年${+mo}月分 ${S.settings.name}`);
+    const body = encodeURIComponent(`お疲れさまです。${S.settings.name}です。\n${y}年${+mo}月分の勤怠CSVを添付します。\n\n※ファイル名：${name}`);
+    setTimeout(() => location.href = `mailto:${encodeURIComponent(S.settings.mailTo)}?subject=${sub}&body=${body}`, 600);
+    toast('保存したCSVをメールに添付してください');
+  }
+}
+
+/* ===================== 設定画面 ===================== */
+function renderSettings(){
+  $('#st-name').value = S.settings.name; $('#st-emp').value = S.settings.empId; $('#st-mail').value = S.settings.mailTo;
+  const opened = new Set([...document.querySelectorAll('.shiftcard[open]')].map(d => d.dataset.i));
+  const sum = s => s.start && s.end ? `<span class="sc-sum"><b>${esc(s.name || 'シフト')}</b><span>${s.start}〜${s.end}${s.end <= s.start ? '（翌日）' : ''}</span></span>` : '<span class="sc-sum muted">未登録</span>';
+  $('#st-shifts').innerHTML = S.shifts.map((s,i) => `<details class="card shiftcard" data-i="${i}" ${opened.has(String(i)) ? 'open' : ''}>
+    <summary><span class="no">${i+1}</span>${sum(s)}<span class="chev" aria-hidden="true"></span></summary>
+    <div class="sc-head"><input type="text" class="sc-name" placeholder="名称（例：日勤・夜勤）" value="${esc(s.name)}" aria-label="シフト${i+1}の名称"></div>
+    <div class="row2">
+      <label class="field"><span>始業</span><input type="time" class="sc-start" value="${s.start}"></label>
+      <label class="field"><span>終業<span class="next sc-next"></span></span><input type="time" class="sc-end" value="${s.end}"></label>
+    </div>
+    ${s.breaks.map((b,j) => `<div class="brkrow"><span class="l">休憩${j+1}</span><input type="time" class="sc-bs" data-j="${j}" value="${b.s}" aria-label="休憩${j+1}開始"><span class="sep">〜</span><input type="time" class="sc-be" data-j="${j}" value="${b.e}" aria-label="休憩${j+1}終了"></div>`).join('')}
+    <button class="btn sm ghost sc-clear" style="margin-top:6px">このシフトをクリア</button>
+  </details>`).join('');
+  const upd = card => { const s = card.querySelector('.sc-start').value, e = card.querySelector('.sc-end').value;
+    card.querySelector('.sc-next').textContent = s && e && e <= s ? '（翌日）' : ''; };
+  document.querySelectorAll('.shiftcard').forEach(card => {
+    upd(card); card.querySelectorAll('.sc-start,.sc-end').forEach(x => x.oninput = () => upd(card));
+    card.querySelector('.sc-clear').onclick = () => { card.querySelectorAll('input').forEach(x => x.value = ''); upd(card); };
+  });
+  $('#ver').textContent = `バージョン ${APP_VERSION}`;
+}
+function saveShifts(){
+  const err = $('#st-shift-err'); err.textContent = '';
+  const next = [];
+  for (const card of document.querySelectorAll('.shiftcard')) {
+    const i = +card.dataset.i, g = c => card.querySelector(c).value;
+    const s = { name:g('.sc-name').trim(), start:g('.sc-start'), end:g('.sc-end'), breaks:[] };
+    for (let j = 0; j < MAX_SHIFT_BREAKS; j++) {
+      const bs = card.querySelector(`.sc-bs[data-j="${j}"]`).value, be = card.querySelector(`.sc-be[data-j="${j}"]`).value;
+      if (!!bs !== !!be) { card.open = true; err.textContent = `シフト${i+1}の休憩${j+1}は開始と終了の両方を入力してください`; return; }
+      s.breaks.push({ s:bs, e:be });
+    }
+    if (!!s.start !== !!s.end) { card.open = true; err.textContent = `シフト${i+1}は始業と終業の両方を入力してください`; return; }
+    if (s.start && s.start === s.end) { card.open = true; err.textContent = `シフト${i+1}の始業と終業が同じ時刻です`; return; }
+    if (!s.start && (s.name || s.breaks.some(b => b.s))) { card.open = true; err.textContent = `シフト${i+1}の始業・終業を入力してください`; return; }
+    next.push(s);
+  }
+  S.shifts = next; save(); renderAll(); toast('シフトを保存しました', 'ok');
+}
+function saveProfile(){
+  const mail = $('#st-mail').value.trim();
+  if (mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) return toast('メールアドレスの形式を確認してください', 'err');
+  S.settings.name = $('#st-name').value.trim(); S.settings.empId = $('#st-emp').value.trim(); S.settings.mailTo = mail;
+  save(); renderAll(); toast('基本情報を保存しました', 'ok');
+}
+async function backup(){
+  const blob = new Blob([JSON.stringify({ app:'kintai', version:APP_VERSION, exportedAt:new Date().toISOString(), data:S }, null, 1)], { type:'application/json' });
+  const r = await shareOrSave(blob, `勤怠バックアップ_${dkey(Date.now()).replace(/-/g,'')}.json`);
+  if (r !== 'abort') toast('バックアップを作成しました');
+}
+async function restore(file){
+  try {
+    const j = JSON.parse(await file.text()); const d = j.data || j;
+    if (!d || typeof d.records !== 'object') throw new Error('形式不一致');
+    if (!await yesNo('バックアップから復元', '現在の端末内のデータは、バックアップの内容で置き換わります。', '復元する', {danger:true})) return;
+    localStorage.setItem(KEY, JSON.stringify(d)); load(); renderAll(); toast('復元しました', 'ok');
+  } catch(e) { toast('このファイルは復元に使えません', 'err'); }
+}
+async function wipe(){
+  if (!await yesNo('データの削除', 'この端末のすべての記録と設定を削除します。元に戻せません。', '削除に進む', {danger:true})) return;
+  if (!await yesNo('最終確認', '本当に削除しますか？先にバックアップの作成をおすすめします。', 'すべて削除する', {danger:true})) return;
+  localStorage.removeItem(KEY); S = blank(); renderAll(); toast('削除しました');
+}
+
+/* ===================== 画面切替・初期化 ===================== */
+let current = 'home';
+function show(v){
+  current = v;
+  document.querySelectorAll('.view').forEach(x => x.classList.toggle('active', x.id === 'v-' + v));
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
+  renderAll(); window.scrollTo(0, 0);
+}
+function renderAll(){
+  renderHome(); tick();
+  if (current === 'hist') renderHist();
+  if (current === 'leave') renderLeave();
+  if (current === 'send') renderSend();
+  if (current === 'set') renderSettings();
+}
+function welcome(){
+  openSheet(`<h2>はじめに</h2><p class="msg">記録はこの端末の中だけに保存されます。最初に氏名を登録してください。</p>
+    <label class="field"><span>氏名</span><input type="text" id="wl-name" autocomplete="name"></label>
+    <label class="field"><span>社員番号（任意）</span><input type="text" id="wl-emp"></label>
+    <p class="err" id="wl-err"></p>
+    <button class="btn primary block" id="wl-ok" style="min-height:52px">登録してシフト設定へ</button>`);
+  $('#wl-ok').onclick = () => {
+    const n = $('#wl-name').value.trim(); if (!n) { $('#wl-err').textContent = '氏名を入力してください'; return; }
+    S.settings.name = n; S.settings.empId = $('#wl-emp').value.trim(); save(); closeSheet(); show('set');
+  };
+}
+
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => show(b.dataset.v));
+$('#b-in').onclick = doIn; $('#b-out').onclick = doOut;
+$('#b-bs').onclick = () => doBreak(true); $('#b-be').onclick = () => doBreak(false);
+$('#b-leave').onclick = () => openLeaveSheet(dkey(Date.now()));
+$('#b-late').onclick = () => toggleDecl('late', '遅刻'); $('#b-early').onclick = () => toggleDecl('early', '早退');
+$('#hm-prev').onclick = () => { histMonth = shiftMonth(histMonth, -1); renderHist(); };
+$('#hm-next').onclick = () => { histMonth = shiftMonth(histMonth, 1); renderHist(); };
+$('#h-add').onclick = askDateThenEdit;
+$('#lv-type').innerHTML = LEAVES.map(l => `<option>${l}</option>`).join('');
+$('#lv-save').onclick = saveLeave;
+$('#cs-month').onchange = renderSend;
+$('#cs-share').onclick = () => sendCsv('share'); $('#cs-save').onclick = () => sendCsv('save'); $('#cs-mail').onclick = () => sendCsv('mail');
+$('#st-save').onclick = saveProfile; $('#st-shift-save').onclick = saveShifts;
+$('#st-backup').onclick = backup; $('#st-restore').onclick = () => $('#st-file').click();
+$('#st-file').onchange = e => { const f = e.target.files[0]; if (f) restore(f); e.target.value = ''; };
+window.addEventListener('storage', e => { if (e.key === KEY) { load(); renderAll(); } });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { load(); renderAll(); } });
+
+load(); renderAll(); setInterval(tick, 1000);
+if (!S.settings.name) welcome();
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "勤怠打刻",
+  "short_name": "勤怠打刻",
+  "description": "シフト勤務に対応したスマホ用の勤怠打刻アプリ",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#071a3d",
+  "theme_color": "#071a3d",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
