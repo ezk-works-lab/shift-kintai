@@ -357,12 +357,12 @@ input::-webkit-date-and-time-value{text-align:left}
 <script>
 'use strict';
 /* ===================== 基本定義 ===================== */
-const APP_VERSION = '1.3.1';
+const APP_VERSION = '1.3.2';
 const MAX_SHIFTS = 10;      // 登録できるシフト数
 const MAX_SHIFT_BREAKS = 5; // 1シフトに登録できる休憩数
 const MAX_BREAKS = 5;       // 1勤務で打刻できる休憩回数
 const BR_IDX = Array.from({length:MAX_BREAKS}, (_, i) => i);
-const KEY = 'kintai.v1';
+const KEY = 'shift-kintai.v1'; // 同じgithub.io上の他アプリと重ならない専用の保存名
 const LEAVES = ['有給休暇','午前半休','午後半休','代休','振休','特別休暇','欠勤'];
 const WD = ['日','月','火','水','木','金','土'];
 const DAY = 86400000;

@@ -2,6 +2,7 @@
   "name": "勤怠打刻（シフト対応）",
   "short_name": "勤怠打刻（シフト対応）",
   "description": "シフト勤務に対応したスマホ用の勤怠打刻アプリ",
+  "id": "shift-kintai-app",
   "lang": "ja",
   "start_url": "./",
   "scope": "./",

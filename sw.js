@@ -1,5 +1,6 @@
 /* 勤怠打刻 サービスワーカー：オフラインでも画面を開けるようにする */
-const CACHE = 'kintai-v1.3.1';
+const PREFIX = 'shift-kintai-'; // このアプリ専用（同じgithub.io上の他アプリのキャッシュに触れない）
+const CACHE = PREFIX + 'v1.3.2';
 const ASSETS = ['./', './index.html', './encoding.min.js', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
@@ -7,7 +8,7 @@ self.addEventListener('install', e => {
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys()
-    .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+    .then(keys => Promise.all(keys.filter(k => k.startsWith(PREFIX) && k !== CACHE).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', e => {

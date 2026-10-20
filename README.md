@@ -24,11 +24,11 @@
 ## 更新手順
 
 1. 変更したファイルをアップロード
-2. `sw.js` の `CACHE` の値（例：`kintai-v1.0.0`）を変更してアップロード
+2. `sw.js` の `CACHE` の版番号（例：`'v1.3.2'`）を変更してアップロード
 3. `index.html` の `APP_VERSION` も合わせて変更すると、設定画面の表示が更新される
 
 ## データの保存先
 
-- 記録は各端末のブラウザ内（localStorage、キー名 `kintai.v1`）に保存
+- 記録は各端末のブラウザ内（localStorage、キー名 `shift-kintai.v1`）に保存
 - GitHub やその他のサーバーには送信しない
 - 月末にCSV（Shift_JIS、日別1行）を LINE・メールで送付
